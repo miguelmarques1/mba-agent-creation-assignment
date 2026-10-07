@@ -4,6 +4,7 @@ from aurora.storage.carga import ErroRestauracao, inicializar_banco, restaurar
 from aurora.storage.db import conectar
 from aurora.storage.modelos import (
     Area,
+    Confirmacao,
     ConfirmacaoPendente,
     Reserva,
     ResultadoReserva,
@@ -27,13 +28,17 @@ from aurora.storage.repositorio import (
 )
 from aurora.storage.sessoes import (
     apartamento_da_sessao_id,
+    expirar_pendencias,
     listar_pendentes,
+    obter_pendente,
     registrar_pendencia,
     registrar_sessao,
+    responder_pendencia,
 )
 
 __all__ = [
     "Area",
+    "Confirmacao",
     "ConfirmacaoPendente",
     "ErroRestauracao",
     "Reserva",
@@ -50,6 +55,7 @@ __all__ = [
     "conectar",
     "criar_reserva",
     "data_valida",
+    "expirar_pendencias",
     "gerar_codigo",
     "inicializar_banco",
     "listar_areas",
@@ -57,7 +63,9 @@ __all__ = [
     "listar_reservas_ativas",
     "listar_visitantes",
     "obter_area",
+    "obter_pendente",
     "registrar_pendencia",
     "registrar_sessao",
+    "responder_pendencia",
     "restaurar",
 ]

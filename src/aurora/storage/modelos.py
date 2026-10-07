@@ -41,6 +41,17 @@ class ConfirmacaoPendente:
 
 
 @dataclass(frozen=True)
+class Confirmacao:
+    id: str
+    session_id: str
+    acao: str
+    detalhes: dict
+    status: Literal["pendente", "respondida", "expirada"]
+    agente: str | None = None
+    chamada_original_id: str | None = None
+
+
+@dataclass(frozen=True)
 class ResultadoReserva:
     status: Literal["criada", "ocupada", "area_invalida", "data_invalida", "erro"]
     codigo: str | None = None

@@ -25,7 +25,7 @@ def test_schema_tem_sessoes_e_confirmacoes(banco):
     with conectar(banco) as conn:
         nomes = {r[0] for r in conn.execute("SELECT name FROM sqlite_master")}
         assert {"sessoes", "confirmacoes", "ix_confirmacoes_sessao_status"} <= nomes
-        assert conn.execute("PRAGMA user_version").fetchone()[0] == 2
+        assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
 
 
 def test_registrar_e_ler_apartamento_da_sessao(banco):
