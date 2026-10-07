@@ -15,6 +15,7 @@ from aurora import storage
 from aurora.agents.assistente import APP_NAME
 from aurora.conversa import (
     ApartamentoInexistente,
+    ConfirmacaoNaoPendente,
     ErroModelo,
     extrair_pendencias,
     texto_final,
@@ -179,6 +180,18 @@ def test_salao_gera_pendencia_com_id_da_function_call(servico_factory):
         {"id": ids[0], "acao": "reservar_area", "detalhes": DETALHES_SALAO}
     ]
     assert ("salao-de-festas", "2030-04-20") not in ativas()
+    with storage.conectar() as conn:
+        agente, chamada = conn.execute(
+            "SELECT agente, chamada_original_id FROM confirmacoes WHERE id = ?", (ids[0],)
+        ).fetchone()
+    chamadas_reservar = [
+        p["function_call"]["id"]
+        for e in eventos
+        for p in e.get("content", {}).get("parts", [])
+        if p.get("function_call", {}).get("name") == "reservar_area"
+    ]
+    assert agente == "reservas"
+    assert chamada == chamadas_reservar[0]
 
 
 def test_visitante_gera_pendencia_nome_data(servico_factory):
@@ -211,7 +224,7 @@ def test_texto_de_confirmacao_nao_resolve_pendencia(servico_factory):
     assert ("salao-de-festas", "2030-04-20") not in ativas()
 
 
-def test_pendencias_acumulam_na_lista(servico_factory):
+def test_pendencia_do_agente_que_perdeu_o_controle_expira_ao_pedir_outra(servico_factory):
     roteiros = {
         "assistente": [transferir("reservas"), transferir("visitantes")],
         "reservas": [SALAO, transferir("assistente")],
@@ -224,10 +237,8 @@ def test_pendencias_acumulam_na_lista(servico_factory):
         return await servico.enviar_mensagem(sid, "Libera a Joana Ribeiro em 2030-04-21")
 
     r = asyncio.run(cenario())
-    assert [p["acao"] for p in r.confirmacoes_pendentes] == [
-        "reservar_area",
-        "autorizar_visitante",
-    ]
+    # F08: o salão (agente `reservas`) expirou quando `visitantes` assumiu a conversa.
+    assert [p["acao"] for p in r.confirmacoes_pendentes] == ["autorizar_visitante"]
 
 
 def test_executar_turno_com_function_response_retoma(servico_factory):
@@ -246,31 +257,27 @@ def test_executar_turno_com_function_response_retoma(servico_factory):
     assert ativas().count(("salao-de-festas", "2030-04-20")) == 1
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "Sem is_resumable, a FunctionResponse vai ao autor do último evento de agente "
-        "(assistente, após a devolução); nenhuma tool reexecuta. Decisão da F08."
-    ),
-)
-def test_aprovacao_apos_mensagem_intermediaria_roteia(servico_factory):
+def test_aprovacao_apos_mensagem_intermediaria_expira(servico_factory):
     roteiros = {
         "assistente": [transferir("reservas"), resposta_texto("Olá!")],
-        "reservas": [SALAO, transferir("assistente"), resposta_texto("Salão reservado.")],
+        "reservas": [SALAO, transferir("assistente")],
     }
 
     async def cenario():
         servico = servico_factory(roteiros)
         sid, r = await _pedir_salao(servico)
-        await servico.enviar_mensagem(sid, "Oi")
+        r2 = await servico.enviar_mensagem(sid, "Oi")
         antes = len(await servico.eventos(sid))
-        await servico.executar_turno(sid, aprovacao(r.confirmacoes_pendentes[0]["id"]))
-        return (await servico.eventos(sid))[antes:]
+        with pytest.raises(ConfirmacaoNaoPendente):
+            await servico.responder_confirmacao(sid, r.confirmacoes_pendentes[0]["id"], True)
+        return r2, antes, len(await servico.eventos(sid))
 
-    novos = [e for e in asyncio.run(cenario()) if e["author"] != "user"]
-    # Documenta o risco da F08: sem `is_resumable`, a aprovação vai ao autor do último evento.
-    assert novos and novos[0]["author"] == "reservas"
-    assert ("salao-de-festas", "2030-04-20") in ativas()
+    r2, antes, depois = asyncio.run(cenario())
+    assert r2.confirmacoes_pendentes == []
+    assert antes == depois
+    assert ("salao-de-festas", "2030-04-20") not in ativas()
+    with storage.conectar() as conn:
+        assert conn.execute("SELECT status FROM confirmacoes").fetchall() == [("expirada",)]
 
 
 def test_resposta_e_texto_do_ultimo_evento_final(servico_factory):
