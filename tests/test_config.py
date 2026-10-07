@@ -53,6 +53,7 @@ def test_invalid_port_fails_fast(settings_env):
 
 
 def test_sessions_db_path_default_e_override(settings_env):
+    settings_env.delenv("AURORA_SESSIONS_DB_PATH")
     assert get_settings().sessions_db_path == Path("var/sessoes.db")
     get_settings.cache_clear()
     settings_env.setenv("AURORA_SESSIONS_DB_PATH", "x/s.db")
