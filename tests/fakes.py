@@ -76,3 +76,43 @@ def contexto_reservas(apartamento="101", confirmado: bool | None = None) -> Fake
 
     confirmacao = None if confirmado is None else ToolConfirmation(confirmed=confirmado)
     return FakeToolContext(apartamento, confirmacao)
+
+
+_MARCADORES_DE_AGENTE = {
+    "assistente": "Você é o assistente virtual",
+    "reservas": "Você é o especialista em reservas",
+    "visitantes": "Você é o especialista em visitantes",
+    "regulamento": "Você é o especialista no regulamento",
+}
+
+
+class LlmPorAgente(BaseLlm):
+    """Um LLM roteirizado por agente: identifica o agente pela `system_instruction`.
+
+    `roteiros` mapeia o nome do agente à lista ordenada de respostas dele; `pedidos` guarda,
+    por agente, os pedidos recebidos. Pode ser injetado como modelo principal e especialista.
+    """
+
+    model: str = "por-agente"
+    roteiros: dict
+    pedidos: dict
+
+    def _agente(self, llm_request: LlmRequest) -> str:
+        instrucao = str(llm_request.config.system_instruction)
+        for nome, marcador in _MARCADORES_DE_AGENTE.items():
+            if marcador in instrucao:
+                return nome
+        raise AssertionError("pedido de agente desconhecido")
+
+    async def generate_content_async(self, llm_request: LlmRequest, stream: bool = False):
+        nome = self._agente(llm_request)
+        vistos = self.pedidos.setdefault(nome, [])
+        vistos.append(llm_request)
+        roteiro = self.roteiros.get(nome, [])
+        if len(vistos) > len(roteiro):
+            raise AssertionError(f"roteiro de {nome} esgotado ({len(vistos)} chamadas)")
+        yield roteiro[len(vistos) - 1]
+
+
+def novo_llm_por_agente(roteiros: dict) -> LlmPorAgente:
+    return LlmPorAgente(roteiros={k: list(v) for k, v in roteiros.items()}, pedidos={})
