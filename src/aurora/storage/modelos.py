@@ -31,6 +31,16 @@ class Visitante:
 
 
 @dataclass(frozen=True)
+class ConfirmacaoPendente:
+    id: str
+    acao: str
+    detalhes: dict
+
+    def para_dict(self) -> dict:
+        return {"id": self.id, "acao": self.acao, "detalhes": self.detalhes}
+
+
+@dataclass(frozen=True)
 class ResultadoReserva:
     status: Literal["criada", "ocupada", "area_invalida", "data_invalida", "erro"]
     codigo: str | None = None

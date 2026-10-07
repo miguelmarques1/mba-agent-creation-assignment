@@ -50,3 +50,10 @@ def test_invalid_port_fails_fast(settings_env):
     settings_env.setenv("AURORA_PORT", "abc")
     with pytest.raises(ValueError, match="AURORA_PORT"):
         get_settings()
+
+
+def test_sessions_db_path_default_e_override(settings_env):
+    assert get_settings().sessions_db_path == Path("var/sessoes.db")
+    get_settings.cache_clear()
+    settings_env.setenv("AURORA_SESSIONS_DB_PATH", "x/s.db")
+    assert get_settings().sessions_db_path == Path("x/s.db")

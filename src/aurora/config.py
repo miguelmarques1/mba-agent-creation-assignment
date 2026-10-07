@@ -16,6 +16,7 @@ class Settings:
     model_principal: str
     model_especialista: str
     db_path: Path
+    sessions_db_path: Path
     host: str
     port: int
 
@@ -41,6 +42,7 @@ def get_settings() -> Settings:
         model_principal=os.environ.get("AURORA_MODEL_PRINCIPAL", DEFAULT_MODEL),
         model_especialista=os.environ.get("AURORA_MODEL_ESPECIALISTA", DEFAULT_MODEL),
         db_path=Path(os.environ.get("AURORA_DB_PATH", "var/aurora.db")),
+        sessions_db_path=Path(os.environ.get("AURORA_SESSIONS_DB_PATH", "var/sessoes.db")),
         host=os.environ.get("AURORA_HOST", "127.0.0.1"),
         port=port,
     )

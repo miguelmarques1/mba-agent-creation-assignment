@@ -44,7 +44,27 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_visitantes_apto_nome_data
     ON visitantes(apartamento, nome COLLATE NOCASE, data);
 CREATE INDEX IF NOT EXISTS ix_visitantes_apartamento ON visitantes(apartamento, data);
 
-PRAGMA user_version = 1;
+CREATE TABLE IF NOT EXISTS sessoes (
+    session_id  TEXT PRIMARY KEY,
+    apartamento TEXT NOT NULL,
+    criada_em   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+CREATE TABLE IF NOT EXISTS confirmacoes (
+    id            TEXT PRIMARY KEY,
+    session_id    TEXT NOT NULL REFERENCES sessoes(session_id),
+    acao          TEXT NOT NULL,
+    detalhes      TEXT NOT NULL,
+    status        TEXT NOT NULL DEFAULT 'pendente' CHECK (status IN ('pendente', 'respondida')),
+    confirmado    INTEGER CHECK (confirmado IN (0, 1)),
+    criada_em     TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    respondida_em TEXT
+);
+
+CREATE INDEX IF NOT EXISTS ix_confirmacoes_sessao_status
+    ON confirmacoes(session_id, status, criada_em);
+
+PRAGMA user_version = 2;
 """
 
 

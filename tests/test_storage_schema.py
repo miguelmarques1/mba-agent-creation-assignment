@@ -36,7 +36,7 @@ def test_schema_tem_indice_unico_parcial(conn):
 def test_schema_idempotente(conn):
     criar_schema(conn)
     criar_schema(conn)
-    assert conn.execute("PRAGMA user_version").fetchone()[0] == 1
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == 2
 
 
 def test_check_rejeita_data_fora_do_formato(conn):
