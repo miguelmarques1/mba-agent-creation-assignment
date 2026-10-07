@@ -1,3 +1,6 @@
+import shutil
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -33,3 +36,24 @@ def settings_env(monkeypatch, tmp_path):
 @pytest.fixture
 def client(settings_env):
     return TestClient(create_app())
+
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+@pytest.fixture
+def db(settings_env):
+    """Banco em `tmp_path` restaurado a partir de `dados/`; devolve o caminho."""
+    from aurora.storage import restaurar
+
+    path = get_settings().db_path
+    restaurar(path, ROOT / "dados")
+    return path
+
+
+@pytest.fixture
+def dados_copia(tmp_path):
+    """Cópia de `dados/` em `tmp_path`, para corromper sem tocar no original."""
+    destino = tmp_path / "dados_copia"
+    shutil.copytree(ROOT / "dados", destino)
+    return destino
