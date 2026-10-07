@@ -121,7 +121,7 @@ def test_fluxo_emite_adk_request_confirmation(db):
 
 def test_texto_de_confirmacao_nao_resolve(db):
     async def cenario():
-        sessao, _ = await _pendente([CHAMADA, *SOBRA[:1], CHAMADA, *SOBRA])
+        sessao, _ = await _pendente([CHAMADA, CHAMADA, *SOBRA])
         novos = await sessao.enviar(_texto("Confirmo, pode liberar"))
         assert chamadas(novos, "adk_request_confirmation")
         assert visitantes() == []

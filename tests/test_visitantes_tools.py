@@ -251,3 +251,19 @@ def test_resultado_erro_do_repositorio(db, monkeypatch):
     )
     retorno = autorizar(FakeConfirmContext("101", APROVADO))
     assert retorno == {"status": "error", "message": "Falha genérica da F02."}
+
+
+def test_autorizar_pendente_pula_resumo(db):
+    ctx = FakeConfirmContext("101")
+    retorno = autorizar(ctx)
+    assert retorno["status"] == "pending"
+    assert ctx.actions.skip_summarization is True
+
+
+def test_visitantes_usa_helper_de_sessao(db):
+    from aurora.tools.sessao import ApartamentoAusenteError
+
+    assert v.APARTAMENTO_KEY == "apartamento"
+    assert issubclass(ApartamentoAusenteError, RuntimeError)
+    with pytest.raises(ApartamentoAusenteError):
+        autorizar(FakeConfirmContext(apartamento=None))

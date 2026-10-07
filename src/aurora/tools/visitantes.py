@@ -5,8 +5,10 @@ import asyncio
 from google.adk.tools import ToolContext
 
 from aurora import storage
+from aurora.tools.sessao import APARTAMENTO_KEY, apartamento_da_sessao
 
-APARTAMENTO_KEY = "apartamento"
+__all__ = ["APARTAMENTO_KEY", "TOOLS_VISITANTES", "autorizar_visitante", "listar_meus_visitantes"]
+
 ACAO_AUTORIZAR_VISITANTE = "autorizar_visitante"
 
 MSG_ERRO_INESPERADO = "Ocorreu um erro inesperado ao processar sua solicitação."
@@ -19,13 +21,6 @@ MSG_NAO_CONFIRMADO = "Autorização não confirmada; ninguém foi liberado."
 MSG_SEM_VISITANTES = "Não há visitantes autorizados para o seu apartamento."
 
 _NOME_MIN, _NOME_MAX = 2, 80
-
-
-def _apartamento_da_sessao(tool_context: ToolContext) -> str:
-    apartamento = tool_context.state.get(APARTAMENTO_KEY)
-    if not apartamento:
-        raise RuntimeError("Sessão sem apartamento no state.")
-    return str(apartamento)
 
 
 def _normalizar_nome(nome: str) -> str:
@@ -70,7 +65,7 @@ async def autorizar_visitante(nome: str, data: str, tool_context: ToolContext) -
         dict com `status` (`pending` aguardando confirmação, `success`, `cancelled` ou
         `error`) e `message`.
     """
-    apartamento = _apartamento_da_sessao(tool_context)
+    apartamento = apartamento_da_sessao(tool_context)
     nome_norm = _normalizar_nome(nome) if isinstance(nome, str) else ""
     erro = _validar(nome_norm, data)
     if erro:
@@ -87,6 +82,7 @@ async def autorizar_visitante(nome: str, data: str, tool_context: ToolContext) -
                 "detalhes": {"nome": nome_norm, "data": data},
             },
         )
+        tool_context.actions.skip_summarization = True
         return {"status": "pending", "message": MSG_PENDENTE}
     if confirmacao.confirmed is not True:
         return {"status": "cancelled", "message": MSG_NAO_CONFIRMADO}
@@ -115,7 +111,7 @@ async def listar_meus_visitantes(tool_context: ToolContext) -> dict:
     Returns:
         dict com `status` e `visitantes`, lista de `{nome, data}`.
     """
-    apartamento = _apartamento_da_sessao(tool_context)
+    apartamento = apartamento_da_sessao(tool_context)
     visitantes = await asyncio.to_thread(storage.listar_visitantes, apartamento)
     resposta: dict = {"status": "success", "visitantes": [v.para_dict() for v in visitantes]}
     if not visitantes:
