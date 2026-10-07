@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 
-from aurora.api import health, sessoes, verificacao
+from aurora.api import confirmacoes, health, sessoes, verificacao
 from aurora.config import get_settings
 from aurora.conversa import ServicoConversa, criar_servico
 from aurora.storage import inicializar_banco
@@ -43,6 +43,7 @@ def create_app(servico: ServicoConversa | None = None) -> FastAPI:
     app.include_router(health.router)
     app.include_router(verificacao.router)
     app.include_router(sessoes.router)
+    app.include_router(confirmacoes.router)
     return app
 
 
