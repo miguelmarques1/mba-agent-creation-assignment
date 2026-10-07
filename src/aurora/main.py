@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 
-from aurora.api import health
+from aurora.api import health, verificacao
 from aurora.config import get_settings
 from aurora.storage import inicializar_banco
 
@@ -30,6 +30,7 @@ def create_app() -> FastAPI:
     logger.setLevel(logging.INFO)
     app = FastAPI(title="Residencial Aurora", lifespan=lifespan)
     app.include_router(health.router)
+    app.include_router(verificacao.router)
     return app
 
 
