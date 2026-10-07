@@ -9,6 +9,7 @@ from fastapi import FastAPI
 
 from aurora.api import health
 from aurora.config import get_settings
+from aurora.storage import inicializar_banco
 
 logger = logging.getLogger("aurora")
 
@@ -17,6 +18,8 @@ MISSING_KEY_WARNING = "GOOGLE_API_KEY não configurada: as rotas de conversa vã
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    if inicializar_banco():
+        logger.info("Banco inicializado com os dados de dados/.")
     if not get_settings().google_api_key_configured:
         logger.warning(MISSING_KEY_WARNING)
     yield

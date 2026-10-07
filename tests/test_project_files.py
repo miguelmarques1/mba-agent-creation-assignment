@@ -82,3 +82,20 @@ def test_gitignore_entries():
     entries = (ROOT / ".gitignore").read_text(encoding="utf-8").split()
     for e in (".env", ".venv/", "__pycache__/", "var/", "*.db"):
         assert e in entries
+
+
+def test_pyproject_declara_aurora_restore():
+    scripts = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"][
+        "scripts"
+    ]
+    assert scripts["aurora-restore"] == "aurora.storage.carga:main"
+
+
+def test_dados_intactos_no_git():
+    assert _git("status", "--porcelain", "--", "dados/") == ""
+    assert _git("diff", "--name-only", "HEAD", "--", "dados/") == ""
+
+
+def test_repositorio_nao_apaga_reservas():
+    fonte = (ROOT / "src" / "aurora" / "storage" / "repositorio.py").read_text(encoding="utf-8")
+    assert "DELETE" not in fonte.upper()

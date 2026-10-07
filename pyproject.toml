@@ -13,6 +13,7 @@ dependencies = [
 
 [project.scripts]
 aurora-api = "aurora.main:run"
+aurora-restore = "aurora.storage.carga:main"
 
 [dependency-groups]
 dev = [
