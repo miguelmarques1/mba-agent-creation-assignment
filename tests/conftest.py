@@ -58,3 +58,28 @@ def dados_copia(tmp_path):
     destino = tmp_path / "dados_copia"
     shutil.copytree(ROOT / "dados", destino)
     return destino
+
+
+@pytest.fixture
+def servico_factory(db, tmp_path):
+    """`servico_factory(roteiros)` monta um `ServicoConversa` com LLM roteirizado.
+
+    Os arquivos ficam em `tmp_path`: chamar a fábrica de novo simula um reinício.
+    """
+    from google.adk.sessions.sqlite_session_service import SqliteSessionService
+
+    from aurora.agents.assistente import criar_app
+    from aurora.conversa import ServicoConversa
+    from tests.fakes import novo_llm_por_agente
+
+    def fabrica(roteiros, llm=None, exige_chave=False):
+        llm = llm or novo_llm_por_agente(roteiros)
+        servico = ServicoConversa(
+            criar_app(llm, llm),
+            SqliteSessionService(str(tmp_path / "sessoes.db")),
+            exige_chave=exige_chave,
+        )
+        servico.llm = llm
+        return servico
+
+    return fabrica
