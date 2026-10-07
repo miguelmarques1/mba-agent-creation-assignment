@@ -16,10 +16,14 @@ ENV_VARS = (
 
 
 @pytest.fixture
-def settings_env(monkeypatch):
-    """Isola as variáveis de ambiente, impede a leitura do `.env` real e limpa o cache."""
+def settings_env(monkeypatch, tmp_path):
+    """Isola as variáveis de ambiente, impede a leitura do `.env` real e limpa o cache.
+
+    `AURORA_DB_PATH` aponta para um banco em `tmp_path`, para que nenhum teste crie `var/aurora.db`.
+    """
     for name in ENV_VARS:
         monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("AURORA_DB_PATH", str(tmp_path / "aurora.db"))
     monkeypatch.setattr("aurora.config.load_dotenv", lambda *a, **k: False)
     get_settings.cache_clear()
     yield monkeypatch

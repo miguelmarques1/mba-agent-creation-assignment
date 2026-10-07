@@ -7,6 +7,7 @@ from aurora.config import get_settings
 
 
 def test_defaults_without_env(settings_env):
+    settings_env.delenv("AURORA_DB_PATH")
     s = get_settings()
     assert s.model_principal == "gemini-3.6-flash"
     assert s.model_especialista == "gemini-3.6-flash"
