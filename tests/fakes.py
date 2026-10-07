@@ -10,7 +10,7 @@ def resposta_texto(texto: str) -> LlmResponse:
     return LlmResponse(content=types.Content(role="model", parts=[types.Part(text=texto)]))
 
 
-def resposta_chamada(nome: str, **args) -> LlmResponse:
+def resposta_chamada(nome: str, /, **args) -> LlmResponse:
     parte = types.Part(function_call=types.FunctionCall(name=nome, args=args))
     return LlmResponse(content=types.Content(role="model", parts=[parte]))
 
@@ -49,3 +49,30 @@ def fake_tool_context(events, invocation_id: str, function_call_id: str):
         function_call_id=function_call_id,
         state={},
     )
+
+
+class FakeActions:
+    def __init__(self):
+        self.skip_summarization = False
+
+
+class FakeToolContext:
+    """`ToolContext` mínimo das tools de reservas: state, confirmação e pedidos registrados."""
+
+    def __init__(self, apartamento="101", tool_confirmation=None, function_call_id="fc-1"):
+        self.state = {} if apartamento is None else {"apartamento": apartamento}
+        self.function_call_id = function_call_id
+        self.tool_confirmation = tool_confirmation
+        self.actions = FakeActions()
+        self.confirmacoes_pedidas: list[dict] = []
+
+    def request_confirmation(self, *, hint=None, payload=None):
+        self.confirmacoes_pedidas.append({"hint": hint, "payload": payload})
+
+
+def contexto_reservas(apartamento="101", confirmado: bool | None = None) -> FakeToolContext:
+    """Contexto do apartamento; `confirmado` None = primeira execução, bool = reexecução."""
+    from google.adk.tools.tool_confirmation import ToolConfirmation
+
+    confirmacao = None if confirmado is None else ToolConfirmation(confirmed=confirmado)
+    return FakeToolContext(apartamento, confirmacao)

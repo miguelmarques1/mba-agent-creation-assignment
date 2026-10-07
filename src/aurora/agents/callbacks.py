@@ -13,3 +13,13 @@ def handle_tool_error(tool, args, tool_context, error, *, mensagem_generica=MENS
     if isinstance(error, ValueError):
         return {"status": "error", "message": str(error)}
     return {"status": "error", "message": mensagem_generica}
+
+
+MENSAGEM_GENERICA_SOLICITACAO = "Ocorreu um erro inesperado ao processar sua solicitação."
+
+
+def handle_tool_error_solicitacao(tool, args, tool_context, error) -> dict:
+    """`on_tool_error_callback` dos especialistas de reservas e visitantes."""
+    return handle_tool_error(
+        tool, args, tool_context, error, mensagem_generica=MENSAGEM_GENERICA_SOLICITACAO
+    )
